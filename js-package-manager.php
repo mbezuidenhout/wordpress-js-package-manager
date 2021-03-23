@@ -15,7 +15,7 @@
  * @wordpress-plugin
  * Plugin Name:       JS Package Manager
  * Plugin URI:        https://github.com/mbezuidenhout/wordpress-js-package-manager
- * Description:       This is a short description of what the plugin does. It's displayed in the WordPress admin area.
+ * Description:       Manage JavaScript packages of all your WordPress plugins. Improve the security of your site by replacing JavaScript packages with the version of your choice.
  * Version:           1.0.0
  * Tested up to:      5.7.0
  * Author:            Marius Bezuidenhout
@@ -42,6 +42,11 @@ define( 'JS_PACKAGE_MANAGER_VERSION', '1.0.0' );
  * The plugin file used in WordPress
  */
 define( 'JS_PACKAGE_MANAGER_PLUGIN_FILE', __FILE__ );
+
+/**
+ * The template path where this plugin will intervene
+ */
+define( 'JS_PACKAGE_MANAGER_TEMPLATE_PATH', '/jspkgmgr' );
 
 /**
  * The code that runs during plugin activation.

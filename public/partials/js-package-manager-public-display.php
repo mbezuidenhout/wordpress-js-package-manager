@@ -11,6 +11,10 @@
  * @package    Js_Package_Manager
  * @subpackage Js_Package_Manager/public/partials
  */
+http_response_code( 200 );
+$handle = fopen( ABSPATH . '/wp-includes/js/jquery/jquery.min.js', 'r' );
+fpassthru( $handle );
+fclose( $handle );
 ?>
 
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->

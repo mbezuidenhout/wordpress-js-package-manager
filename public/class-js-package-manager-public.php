@@ -100,4 +100,45 @@ class Js_Package_Manager_Public {
 
 	}
 
+	/**
+	 * JavaScript packages are replaced here with links to our template.
+	 *
+	 * @since    1.0.0
+	 */
+	public function js_package_manager() {
+		global $wp_scripts;
+		foreach ($wp_scripts->registered as $registered_script) {
+			if ($registered_script->handle == 'jquery-core'
+			    && $registered_script->src == '/wp-includes/js/jquery/jquery.min.js'
+			    && $registered_script->ver == '3.5.1' ) {
+				$registered_script->src = JS_PACKAGE_MANAGER_TEMPLATE_PATH . '/js/jquery/jquery.min.js';
+			}
+		}
+	}
+
+	/**
+	 * Filters the path of the current template before including it.
+	 * If file is not found then it might be one of the files handled by this js package manager.
+	 *
+	 * @since    1.0.0
+	 *
+	 * @param string $template The path of the template to include.
+	 * @return string
+	 */
+	public function maybe_set_template( $template ) {
+		$packages = array(
+			'/js/jquery/jquery.min.js',
+		);
+		$request_uri = $_SERVER['REQUEST_URI'];
+		if ( strpos( $request_uri, JS_PACKAGE_MANAGER_TEMPLATE_PATH ) === false ) {
+			return $template;
+		}
+		foreach( $packages as $package ) {
+			if ( strpos ( $request_uri, $package ) == strlen( JS_PACKAGE_MANAGER_TEMPLATE_PATH ) ) {
+				return plugin_dir_path( __DIR__ ) . 'public/partials/js-package-manager-public-display.php';
+			}
+		}
+		return $template;
+	}
+
 }
