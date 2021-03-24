@@ -49,6 +49,11 @@ define( 'JS_PACKAGE_MANAGER_PLUGIN_FILE', __FILE__ );
 define( 'JS_PACKAGE_MANAGER_TEMPLATE_PATH', '/jspkgmgr' );
 
 /**
+ * Primary table name
+ */
+define( 'JS_PACKAGE_MANAGER_TABLE', 'jspkgmgr_versions' );
+
+/**
  * The code that runs during plugin activation.
  * This action is documented in includes/class-js-package-manager-activator.php
  */

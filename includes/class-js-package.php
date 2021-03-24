@@ -56,8 +56,8 @@ class Js_Package {
 		$this->versions = array();
 	}
 
-	public function add( $version, $filename = null ) {
-		$this->versions[ $version ] = new Js_Package_Version( $version, $this, $filename );
+	public function add( $version, $filename = null, $load_from_cache = true ) {
+		$this->versions[ $version ] = new Js_Package_Version( $version, $this, $filename, $load_from_cache );
 	}
 
 	/**

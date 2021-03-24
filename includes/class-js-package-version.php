@@ -36,11 +36,29 @@ class Js_Package_Version {
 	 */
 	public $package;
 
-	public function __construct( $version, $package, $src = null ) {
+	public function __construct( $version, $package, $src = null, $load_from_cache = true ) {
+		global $wpdb;
+		$table_name = $wpdb->base_prefix . JS_PACKAGE_MANAGER_TABLE;
 		$this->package = $package;
 		$this->version = $version;
 		if ( $src !== null ) {
-			$this->load_from_file( $src );
+			$in_cache = false;
+			if( $load_from_cache ) {
+				$cached_version = $wpdb->get_row("SELECT src, version, pretxt, posttxt, fingerprint, scriptlen FROM ${table_name} WHERE src = '${src}'");
+				if( property_exists( $cached_version, 'src') && $cached_version->src == $src) {
+					$this->set_props(
+						$cached_version->pretxt,
+						$cached_version->posttxt,
+						$cached_version->scriptlen,
+						$cached_version->fingerprint,
+						$cached_version->src,
+					);
+					$in_cache = true;
+				}
+			}
+			if( !$in_cache ) {
+				$this->load_from_file( $src );
+			}
 		}
 	}
 
@@ -67,12 +85,22 @@ class Js_Package_Version {
 	 * @param $src
 	 */
 	public function load_from_file( $src ) {
+		global $wpdb;
+		$table_name = $wpdb->base_prefix . JS_PACKAGE_MANAGER_TABLE;
 		$this->src         = $src;
 		$file_content      = file_get_contents( $src );
 		$this->fingerprint = md5( $file_content );
 		$this->length      = strlen( $file_content );
 		$this->start       = substr( $file_content, 0, 10 );
-		$this->end         = substr( $file_content, - 10 );
+		$this->end         = substr( $file_content, -10 );
+		$wpdb->insert( $table_name, array(
+			'src'         => $src,
+			'version'     => $this->get_ver(),
+			'pretxt'      => $this->start,
+			'posttxt'     => $this->end,
+			'fingerprint' => $this->fingerprint,
+			'scriptlen'   => $this->length,
+		) );
 	}
 
 	/**

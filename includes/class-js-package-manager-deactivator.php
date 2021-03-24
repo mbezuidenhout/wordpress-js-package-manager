@@ -30,7 +30,12 @@ class Js_Package_Manager_Deactivator {
 	 * @since    1.0.0
 	 */
 	public static function deactivate() {
+		global $wpdb;
 
+		$table_name = $wpdb->base_prefix . JS_PACKAGE_MANAGER_TABLE;
+
+		$sql = "DROP TABLE IF EXISTS ${table_name}";
+		$wpdb->query($sql);
 	}
 
 }
