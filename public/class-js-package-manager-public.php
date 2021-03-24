@@ -108,11 +108,15 @@ class Js_Package_Manager_Public {
 	public function js_package_manager() {
 		global $wp_scripts;
 		foreach ($wp_scripts->registered as $registered_script) {
-			if ($registered_script->handle == 'jquery-core'
-			    && $registered_script->src == '/wp-includes/js/jquery/jquery.min.js'
-			    && $registered_script->ver == '3.5.1' ) {
-				$registered_script->src = JS_PACKAGE_MANAGER_TEMPLATE_PATH . '/js/jquery/jquery.min.js';
+			$managed_script = Script_Manager::get_by_dependency( $registered_script );
+			if( $managed_script instanceof Script_Manager ) {
+				$registered_script->src = JS_PACKAGE_MANAGER_TEMPLATE_PATH . $managed_script->get_path();
 			}
+//			if ($registered_script->handle == 'jquery-core'
+//			    && $registered_script->src == '/wp-includes/js/jquery/jquery.min.js'
+//			    && $registered_script->ver == '3.5.1' ) {
+//				$registered_script->src = JS_PACKAGE_MANAGER_TEMPLATE_PATH . '/js/jquery/jquery.min.js';
+//			}
 		}
 	}
 
@@ -126,17 +130,9 @@ class Js_Package_Manager_Public {
 	 * @return string
 	 */
 	public function maybe_set_template( $template ) {
-		$packages = array(
-			'/js/jquery/jquery.min.js',
-		);
-		$request_uri = $_SERVER['REQUEST_URI'];
-		if ( strpos( $request_uri, JS_PACKAGE_MANAGER_TEMPLATE_PATH ) === false ) {
-			return $template;
-		}
-		foreach( $packages as $package ) {
-			if ( strpos ( $request_uri, $package ) == strlen( JS_PACKAGE_MANAGER_TEMPLATE_PATH ) ) {
-				return plugin_dir_path( __DIR__ ) . 'public/partials/js-package-manager-public-display.php';
-			}
+		$managed_script = Script_Manager::get_by_path( $_SERVER['REQUEST_URI'] );
+		if( $managed_script instanceof Script_Manager ) {
+			return $managed_script->get_template();
 		}
 		return $template;
 	}

@@ -45,7 +45,7 @@ class Js_Package_Manager_Admin {
 	 *
      * @since    1.0.0
      * @access   private
-	 * @var      array     $packages   Array of packages to match against.
+	 * @var      Js_Package[] $packages   Array of packages to match against.
 	 */
 	private $packages;
 
@@ -61,10 +61,42 @@ class Js_Package_Manager_Admin {
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
 
-		$this->packages[] = new Js_Package( 'jquery-min', 'jQuery', '3.5.1', 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js' );
+		$loadable_packages = array(
+		    array(
+			    'id'   => 'jquery-min',
+                'name' => 'jQuery',
+                'versions' => array(
+                    '3.5.1' => 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js',
+                    '3.6.0' => 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js',
+                ),
+            ),
+            array(
+                'id'    => 'flickity',
+                'name'  => 'Flickity.io',
+                'versions' => array(
+                    '2.2.2' => 'https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.2/flickity.pkgd.min.js',
+                    '2.2.1' => 'https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.1/flickity.pkgd.min.js',
+                ),
+            ),
+            array(
+                'id'    => 'moment-with-locales',
+                'name'  => 'Moment',
+                'versions' => array(
+                    '2.10.6' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment-with-locales.min.js',
+                ),
+            ),
+        );
+		foreach( $loadable_packages as $package ) {
+		    $pkg = new Js_Package( $package['id'], $package['name'] );
+		    foreach( $package['versions'] as $ver => $src ) {
+			    $pkg->add( $ver, $src );
+		    }
+		    $this->packages[] = $pkg;
+		}
 
 		/**
          * jQuery min
+         * Version 3.5.1
          * start: /*! jQuery
          * length: 89476
          * fingerprint: dc5e7f18c8d36ac1d3d4753a87c98d0a
@@ -125,44 +157,71 @@ class Js_Package_Manager_Admin {
 	 */
 	public function register_settings() {
 		global $wp_scripts;
+		/** @var Js_Package_Version[] $packages */
+		$packages = array();
 		add_settings_section( 'js_package_manager_settings', 'JS Package Manager Settings', [ $this, 'plugin_section_text' ], 'js_package_manager_plugin' );
 		foreach ( $wp_scripts->registered as $registered_script ) {
-		    if( !property_exists( $registered_script, 'src' ) ) {
-		        continue 1;
-		    }
-            $script_file = $registered_script->src;
-			if ( filter_var ($script_file, FILTER_VALIDATE_URL ) ) {
+			if ( ! property_exists( $registered_script, 'src' ) || empty( $registered_script->src ) ) {
+				continue 1;
+			}
+			$script_file = $registered_script->src;
+			if ( filter_var( $script_file, FILTER_VALIDATE_URL ) ) {
 				if ( strpos( $script_file, $wp_scripts->base_url ) === 0 ) {
 					$script_file = ABSPATH . ltrim( substr( $script_file, strlen( $wp_scripts->base_url ) ), '/' );
 				}
 			} else {
 				$script_file = ABSPATH . ltrim( $script_file, '/' );
 			}
-			$matched_parts = $this->js_package_match( $script_file );
-			if ( count( $matched_parts ) ) {
-				foreach ( $matched_parts as $part ) {
-					add_settings_field(
-						'js_package_manager_' . $part->package->get_id(),
-						$part->package->get_name(),
-						[ $this, 'package_selector_field' ],
-						'js_package_manager_plugin',
-						'js_package_manager_settings',
-						[
-							'label_for' => $part->package->get_id(),
-							'type'      => 'select',
-                            'options'   => array(
-                                    array( 'value' => '', 'title' => 'Current (' . $part->package->get_ver() . ')' ),
-                                    array( 'value' => '0', 'title' => 'Latest' ),
-	                                array( 'value' => '3.5.0', 'title' => '3.5.0' ),
-	                                array( 'value' => '3.5.1', 'title' => '3.5.1' ),
-                                    array( 'value' => '3.6.0', 'title' => '3.6.0' ),
-                            ),
-						] );
-
+			$found_packages = $this->find_packages( $script_file );
+			if( !empty( $found_packages ) ) {
+				foreach ( $found_packages as $found_package ) {
+					$packages[ $found_package->package->get_name() ] = $found_package->package_version;
 				}
-            }
-            // Search for js packages in registered scripts
+			}
 		}
+
+		foreach( $packages as $package_ver ) {
+		    $options = array(
+		            array( 'value' => '', 'title' => 'Current (' . $package_ver->get_ver() . ')' ),
+                    array( 'value' => '0', 'title' => 'Latest' ),
+            );
+		    foreach( $package_ver->package->get_versions() as $package_version ) {
+		        $options[] = array( 'value' => $package_version, 'title' => $package_version );
+            }
+			add_settings_field(
+				'js_package_manager_' . $package_ver->package->get_id(),
+				$package_ver->package->get_name(),
+				[ $this, 'package_selector_field' ],
+				'js_package_manager_plugin',
+				'js_package_manager_settings',
+				[
+					'label_for' => $package_ver->package->get_id(),
+					'type'      => 'select',
+					'options'   => $options,
+				] );
+			register_setting( 'js_package_manager_plugin_options', $package_ver->package->get_name() );
+        }
+	}
+
+	/**
+     * Find package and return their identified parts and positions in the script.
+     *
+	 * @param $script_file
+	 *
+	 * @return Js_Package_Part[]
+	 */
+	public function find_packages( $script_file ) {
+		$found = array();
+		$script = file_get_contents( $script_file );
+		foreach( $this->packages as $package ) {
+			$part = $package->find_in_script( $script );
+			if( $part instanceof Js_Package_Part ) {
+			    // Cut the found package out of the string so we don't match against it again.
+			    $script = substr( $script, 0, $part->get_pos() ) . substr( $script, $part->get_pos() + $part->package_version->get_len() );
+				$found[] = $part;
+			}
+		}
+		return $found;
 	}
 
 	public function package_selector_field( $args ) {
@@ -181,29 +240,6 @@ class Js_Package_Manager_Admin {
 	            break;
 		}
 	}
-
-	/**
-     * Search the script for JavaScript packages and return their position in the script.
-     *
-	 * @param $script_file
-	 *
-	 * @return array
-	 */
-	private function js_package_match( $script_file ) {
-		$found = array();
-		$script = file_get_contents( $script_file );
-		for ( $i = 0; $i < count($this->packages); $i++ ) {
-		    if (strlen($script) < $this->packages[$i]->get_len()) {
-		        continue;
-            }
-            $pos = $this->packages[$i]->pos($script);
-		    if ( $pos !== false ) {
-                $found[] = new Js_Package_Part( $pos, $this->packages[$i] );
-			    $script = substr($script, 0, $pos) . substr($script, $pos + $this->packages[$i]->get_len());
-		    }
-        }
-		return $found;
-    }
 
 	public function plugin_section_text( $section ) {
 		$test = 1;

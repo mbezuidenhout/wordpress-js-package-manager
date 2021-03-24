@@ -128,9 +128,19 @@ class Js_Package_Manager {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-js-package.php';
 
 		/**
-		 * Class definition for managing packages sections
+		 * Class definition for identifying packages in concatenated scripts
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-js-package-part.php';
+
+		/**
+		 * Class definition for managing package versions
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-js-package-version.php';
+
+		/**
+		 * Manager for registered scripts
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-script-manager.php';
 
 		$this->loader = new Js_Package_Manager_Loader();
 

@@ -24,41 +24,40 @@
  * @author     Marius Bezuidenhout <marius dot bezuidenhout at gmail dot com>
  */
 class Js_Package {
-	protected $start;
-	protected $length;
 	protected $identifier;
-	protected $friendly_name;
-	protected $version;
-	protected $fingerprint;
-	protected $end;
-
-	public function __construct( $identifier, $friendly_name, $version, $filename ) {
-		$this->identifier = $identifier;
-		$this->friendly_name = $friendly_name;
-		$this->version = $version;
-		$file_content = file_get_contents( $filename );
-		$this->fingerprint = md5( $file_content );
-		$this->length = strlen( $file_content );
-		$this->start = substr( $file_content, 0, 10 );
-		$this->end = substr( $file_content, -10 );
-	}
 
 	/**
-	 * Returns the position of the package in the string or false if not found
+	 * Package name
 	 *
-	 * @param $string
-	 * @return bool
+	 * @since    1.0.0
+	 * @access   protected
+	 * @var      string $friendly_name
 	 */
-	public function pos( $string ) {
-		if ( strlen( $string) > $this->length &&
-		     strpos ( $string, $this->start ) !== false ) {
-			$start = strpos ( $string, $this->start );
-			$string = substr( $string, $start, $this->length);
-			if ( strpos( $this->end, substr( $string, -10 ) ) === 0 && $this->fingerprint == md5( $string ) ) {
-				return strpos ( $string, $this->start );
-			}
-		}
-		return false;
+	protected $friendly_name;
+
+	/**
+	 * Package versions
+	 *
+	 * @since    1.0.0
+	 * @access   protected
+	 * @var      Js_Package_Version[] $versions   Array of packages versions
+	 */
+	protected $versions;
+
+	/**
+	 * Js_Package constructor.
+	 *
+	 * @param $identifier
+	 * @param $friendly_name
+	 */
+	public function __construct( $identifier, $friendly_name ) {
+		$this->identifier = $identifier;
+		$this->friendly_name = $friendly_name;
+		$this->versions = array();
+	}
+
+	public function add( $version, $filename = null ) {
+		$this->versions[ $version ] = new Js_Package_Version( $version, $this, $filename );
 	}
 
 	/**
@@ -71,29 +70,43 @@ class Js_Package {
 	}
 
 	/**
-	 * Returns the script length
-	 *
-	 * @return int
-	 */
-	public function get_len() {
-		return $this->length;
-	}
-
-	/**
-	 * Returns the script version
-	 *
-	 * @return string
-	 */
-	public function get_ver() {
-		return $this->version;
-	}
-
-	/**
 	 * Returns the script's friendly name
 	 *
 	 * @return mixed
 	 */
 	public function get_name() {
 		return $this->friendly_name;
+	}
+
+
+	/**
+	 * Returns a sorted array of package versions
+	 *
+	 * @return array
+	 */
+	public function get_versions() {
+		$versions = array();
+		foreach( $this->versions as $version ) {
+			$versions[] = $version->get_ver();
+		}
+		usort( $versions, 'version_compare' );
+		return array_reverse( $versions );
+	}
+
+	/**
+	 * Match each version of the package against the script and return it's position if found.
+	 *
+	 * @param string $script
+	 *
+	 * @return Js_Package_Part|bool
+	 */
+	public function find_in_script( $script ) {
+		foreach( $this->versions as $version ) {
+			$part = $version->find_in_script( $script );
+			if( $part instanceof Js_Package_Part) {
+				return $part;
+			}
+		}
+		return false;
 	}
 }
