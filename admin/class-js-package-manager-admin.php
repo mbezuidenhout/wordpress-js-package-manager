@@ -74,8 +74,9 @@ class Js_Package_Manager_Admin {
                 'id'    => 'flickity',
                 'name'  => 'Flickity.io',
                 'versions' => array(
+                    '1.1.0' => 'https://cdnjs.cloudflare.com/ajax/libs/flickity/1.1.0/flickity.pkgd.min.js',
+	                '2.2.1' => 'https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.1/flickity.pkgd.min.js',
                     '2.2.2' => 'https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.2/flickity.pkgd.min.js',
-                    '2.2.1' => 'https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.1/flickity.pkgd.min.js',
                 ),
             ),
             array(
@@ -83,6 +84,9 @@ class Js_Package_Manager_Admin {
                 'name'  => 'Moment',
                 'versions' => array(
                     '2.10.6' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment-with-locales.min.js',
+                    '2.11.0' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.0/moment-with-locales.min.js',
+                    '2.29.0' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.0/moment-with-locales.min.js',
+                    '2.29.1' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.min.js',
                 ),
             ),
         );
@@ -157,9 +161,17 @@ class Js_Package_Manager_Admin {
 	 */
 	public function register_settings() {
 		global $wp_scripts;
+
+		// Check that the user is allowed to update options
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( __( 'You do not have sufficient permissions to access this page.', '' ) );
+		}
+
 		/** @var Js_Package_Version[] $packages */
 		$packages = array();
-		add_settings_section( 'js_package_manager_settings', 'JS Package Manager Settings', [ $this, 'plugin_section_text' ], 'js_package_manager_plugin' );
+		$scripts = array();
+		add_settings_section( 'js_package_manager_settings', 'JS Package Manager Settings', null, 'js_package_manager_plugin' );
+		/** @var _WP_Dependency $registered_script */
 		foreach ( $wp_scripts->registered as $registered_script ) {
 			if ( ! property_exists( $registered_script, 'src' ) || empty( $registered_script->src ) ) {
 				continue 1;
@@ -174,11 +186,18 @@ class Js_Package_Manager_Admin {
 			}
 			$found_packages = $this->find_packages( $script_file );
 			if( !empty( $found_packages ) ) {
+			    $parts = array();
 				foreach ( $found_packages as $found_package ) {
 					$packages[ $found_package->package->get_name() ] = $found_package->package_version;
+					$parts = array('start' => $found_package->get_pos(), 'id' => $found_package->package->get_id(), 'ver' => $found_package->package_version->get_ver() );
 				}
+				$scripts[$registered_script->handle] = $parts;
 			}
 		}
+
+		register_setting( 'js_package_manager_plugin_options', 'jspkgmgr_scripts' );
+		update_option( 'jspkgmgr_scripts', $scripts );
+		register_setting( 'js_package_manager_plugin_options', 'jspkgmgr_settings' );
 
 		foreach( $packages as $package_ver ) {
 		    $options = array(
@@ -199,9 +218,22 @@ class Js_Package_Manager_Admin {
 					'type'      => 'select',
 					'options'   => $options,
 				] );
-			register_setting( 'js_package_manager_plugin_options', $package_ver->package->get_name() );
         }
+
+		$this->save_settings( $packages );
 	}
+
+	public function save_settings( $packages ) {
+	    $settings = [];
+	    foreach( $packages as $package_ver ) {
+	        if( isset( $_POST[$package_ver->package->get_id()] ) ) {
+		        $settings[$package_ver->package->get_id()] = $_POST[ $package_ver->package->get_id() ];
+	        }
+        }
+	    if( isset( $_POST['option_page'] ) && strpos( $_POST['option_page'], 'js_package_manager_plugin_options' ) === 0 ) {
+	        update_option( 'jspkgmgr_settings', $settings );
+        }
+    }
 
 	/**
      * Find package and return their identified parts and positions in the script.
@@ -226,12 +258,16 @@ class Js_Package_Manager_Admin {
 
 	public function package_selector_field( $args ) {
 		global $wp_settings_fields;
-		$options = get_option($args['label_for']);
+		$settings = get_option('jspkgmgr_settings');
 		switch($args['type']) {
 			case 'select':
 			    echo "<select name=\"" . $args['label_for'] . "\" id=\"" . $args['label_for'] . "\">";
 			    foreach( $args['options'] as $option ) {
-			        echo "<option>" . $option['title'] . "</option>";
+			        $selected = '';
+			        if( key_exists( $args['label_for'], $settings ) && $settings[ $args['label_for'] ] === $option['value'] ) {
+			            $selected = ' selected="selected"';
+                    }
+			        echo "<option value=\"" . $option['value'] . "\"" . $selected . ">" . $option['title'] . "</option>";
                 }
 			    echo "</select>";
 				break;
@@ -239,10 +275,6 @@ class Js_Package_Manager_Admin {
 	            echo "<input name=\"" . $args['label_for'] . "\" type=\"" . $args['type'] . "\" id=\"" . $args['label_for'] . "\" value=\"\" class=\"regular-text\">";
 	            break;
 		}
-	}
-
-	public function plugin_section_text( $section ) {
-		$test = 1;
 	}
 
 	/**
@@ -256,10 +288,12 @@ class Js_Package_Manager_Admin {
 
 	public function render_settings_page( $args ) {
 		global $wp_settings_sections;
+		$this->register_settings();
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html(get_admin_page_title()) ?></h1>
-			<form action="options.php" method="post">
+			<?php settings_errors(); ?>
+			<form action="" method="post">
 				<?php
 				settings_fields( 'js_package_manager_plugin_options' );
 				do_settings_sections( 'js_package_manager_plugin' );
