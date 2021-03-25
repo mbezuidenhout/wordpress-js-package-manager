@@ -94,6 +94,8 @@ class Js_Package_Version {
 		$this->start       = substr( $file_content, 0, 10 );
 		$this->end         = substr( $file_content, -10 );
 		$wpdb->insert( $table_name, array(
+			'handle'      => $this->package->get_id(),
+			'name'        => $this->package->get_name(),
 			'src'         => $src,
 			'version'     => $this->get_ver(),
 			'pretxt'      => $this->start,

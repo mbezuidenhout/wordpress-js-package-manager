@@ -62,10 +62,21 @@ class Js_Package_Manager_Admin {
 		$this->version = $version;
 
 		$loadable_packages = array(
+            array(
+                'id' => 'jquery-migrate',
+                'name' => 'jQuery Migrate',
+                'versions' => array(
+                    '3.3.0' => 'https://cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.3.0/jquery-migrate.min.js',
+                    '3.3.1' => 'https://cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.3.1/jquery-migrate.min.js',
+                    '3.3.2' => 'https://cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.3.2/jquery-migrate.min.js',
+                ),
+            ),
 		    array(
 			    'id'   => 'jquery-min',
                 'name' => 'jQuery',
                 'versions' => array(
+                    '3.4.1' => 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js',
+                    '3.5.0' => 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.0/jquery.min.js',
                     '3.5.1' => 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js',
                     '3.6.0' => 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js',
                 ),
@@ -98,14 +109,6 @@ class Js_Package_Manager_Admin {
 		    $this->packages[] = $pkg;
 		}
 
-		/**
-         * jQuery min
-         * Version 3.5.1
-         * start: /*! jQuery
-         * length: 89476
-         * fingerprint: dc5e7f18c8d36ac1d3d4753a87c98d0a
-         * end: $=S),S});\n
-		 */
 	}
 
 	/**
@@ -186,12 +189,12 @@ class Js_Package_Manager_Admin {
 			}
 			$found_packages = $this->find_packages( $script_file );
 			if( !empty( $found_packages ) ) {
-			    $parts = array();
+			    $parts = [];
 				foreach ( $found_packages as $found_package ) {
 					$packages[ $found_package->package->get_name() ] = $found_package->package_version;
-					$parts = array('start' => $found_package->get_pos(), 'id' => $found_package->package->get_id(), 'ver' => $found_package->package_version->get_ver() );
+					$parts[] = array('start' => $found_package->get_pos(), 'id' => $found_package->package->get_id(), 'ver' => $found_package->package_version->get_ver() );
 				}
-				$scripts[$registered_script->handle] = $parts;
+				$scripts[$registered_script->handle] = array( 'ver' => $registered_script->ver, 'src' => $script_file , 'parts' => $parts );
 			}
 		}
 
@@ -202,7 +205,7 @@ class Js_Package_Manager_Admin {
 		foreach( $packages as $package_ver ) {
 		    $options = array(
 		            array( 'value' => '', 'title' => 'Current (' . $package_ver->get_ver() . ')' ),
-                    array( 'value' => '0', 'title' => 'Latest' ),
+                    //array( 'value' => '0', 'title' => 'Latest' ),
             );
 		    foreach( $package_ver->package->get_versions() as $package_version ) {
 		        $options[] = array( 'value' => $package_version, 'title' => $package_version );

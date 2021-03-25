@@ -23,9 +23,10 @@
  * @author     Marius Bezuidenhout <marius dot bezuidenhout at gmail dot com>
  */
 class Script_Manager {
+	protected $path;
 
-	public function __construct () {
-
+	public function __construct ( $path ) {
+		$this->path = $path;
 	}
 
 	/**
@@ -38,17 +39,28 @@ class Script_Manager {
 		if( !$script instanceof _WP_Dependency ) {
 			return false;
 		}
+		$settings = get_option('jspkgmgr_settings');
+		$scripts  = get_option('jspkgmgr_scripts');
+		if ( array_key_exists( $script->handle, $scripts ) ) {
+			foreach( $scripts[ $script->handle ]['parts'] as $parts ) {
+				if( array_key_exists( $parts['id'], $settings ) && !empty( $settings[ $parts['id'] ] ) ) {
+					return new self( $script->handle );
+				}
+			}
+		}
 		return false;
-		return new self( $script );
 	}
 
 	public static function get_by_path( $path ) {
+		if( strpos( $path, JS_PACKAGE_MANAGER_TEMPLATE_PATH ) === 0 ) {
+			$path = substr( $path, strlen( JS_PACKAGE_MANAGER_TEMPLATE_PATH) + 1 );
+			$path = substr( $path, 0, strpos( $path, '?' ) );
+			$scripts = get_option( 'jspkgmgr_scripts' );
+			if ( array_key_exists( $path, $scripts ) ) {
+				return new self( $path );
+			}
+		}
 		return false;
-		return new self( $path );
-	}
-
-	public function output() {
-
 	}
 
 	public function get_template() {
@@ -56,6 +68,6 @@ class Script_Manager {
 	}
 
 	public function get_path() {
-		return '/wp-includes/js/jquery/jquery.min.js';
+		return JS_PACKAGE_MANAGER_TEMPLATE_PATH . '/' . $this->path;
 	}
 }

@@ -38,6 +38,8 @@ class Js_Package_Manager_Activator {
 		$sql = "CREATE TABLE ${table_name} (
     version_id bigint(20) unsigned NOT NULL auto_increment,
 	src varchar(2048) NOT NULL,
+	handle varchar(128) NOT NULL,
+	name varchar(128) NOT NULL,
 	version varchar(255) NOT NULL,
 	pretxt varchar(12) NOT NULL,
 	posttxt varchar(12) NOT NULL,

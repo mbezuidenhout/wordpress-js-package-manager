@@ -110,7 +110,7 @@ class Js_Package_Manager_Public {
 		foreach ($wp_scripts->registered as $registered_script) {
 			$managed_script = Script_Manager::get_by_dependency( $registered_script );
 			if( $managed_script instanceof Script_Manager ) {
-				$registered_script->src = JS_PACKAGE_MANAGER_TEMPLATE_PATH . $managed_script->get_path();
+				$registered_script->src = $managed_script->get_path();
 			}
 //			if ($registered_script->handle == 'jquery-core'
 //			    && $registered_script->src == '/wp-includes/js/jquery/jquery.min.js'
