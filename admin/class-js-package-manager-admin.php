@@ -241,18 +241,29 @@ class Js_Package_Manager_Admin {
 	/**
      * Find package and return their identified parts and positions in the script.
      *
-	 * @param $script_file
+	 * @param string $src
 	 *
 	 * @return Js_Package_Part[]
 	 */
-	public function find_packages( $script_file ) {
+	public function find_packages( $src ) {
 		$found = array();
-		$script = file_get_contents( $script_file );
+
+		if ( filter_var( $src, FILTER_VALIDATE_URL ) ) {
+			$response     = wp_remote_get( $src );
+			// If we cannot get the file then continue
+			if( is_wp_error( $response) ) {
+				return $found;
+			}
+			$file_content = $response['body'];
+		} else {
+			$file_content = file_get_contents( $src );
+		}
+
 		foreach( $this->packages as $package ) {
-			$part = $package->find_in_script( $script );
+			$part = $package->find_in_script( $file_content );
 			if( $part instanceof Js_Package_Part ) {
 			    // Cut the found package out of the string so we don't match against it again.
-			    $script = substr( $script, 0, $part->get_pos() ) . substr( $script, $part->get_pos() + $part->package_version->get_len() );
+				$file_content = substr( $file_content, 0, $part->get_pos() ) . substr( $file_content, $part->get_pos() + $part->package_version->get_len() );
 				$found[] = $part;
 			}
 		}

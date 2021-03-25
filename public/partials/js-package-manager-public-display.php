@@ -38,7 +38,16 @@ function build_sorter($key) {
 usort($registered_script_parts, build_sorter('start') );
 $registered_script_parts = array_reverse( $registered_script_parts );
 
-$output = file_get_contents( $registered_scripts[$path]['src'] );
+if ( filter_var( $registered_scripts[$path]['src'], FILTER_VALIDATE_URL ) ) {
+	$response     = wp_remote_get( $registered_scripts[$path]['src'] );
+	// If we cannot get the file then continue
+	if( is_wp_error( $response) ) {
+        wp_die();
+	}
+	$output = $response['body'];
+} else {
+	$output = file_get_contents( $registered_scripts[$path]['src'] );
+}
 
 foreach($registered_script_parts as $part) {
     if( !array_key_exists($part['id'], $settings ) ) {
@@ -52,8 +61,17 @@ foreach($registered_script_parts as $part) {
             $replacement_version = $cached_script;
         }
     }
-
-    $output = substr( $output, 0, $part['start'] ) . file_get_contents($replacement_version->src ) . substr( $output, $part['start'] + $package_version->scriptlen );
+	if ( filter_var( $replacement_version->src, FILTER_VALIDATE_URL ) ) {
+		$response     = wp_remote_get( $replacement_version->src );
+		// If we cannot get the file then continue
+		if( is_wp_error( $response) ) {
+		    continue;
+        }
+		$file_content = $response['body'];
+	} else {
+		$file_content = file_get_contents( $replacement_version->src );
+	}
+    $output = substr( $output, 0, $part['start'] ) . $file_content . substr( $output, $part['start'] + $package_version->scriptlen );
 }
 
 echo $output;

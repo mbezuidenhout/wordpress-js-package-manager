@@ -88,7 +88,12 @@ class Js_Package_Version {
 		global $wpdb;
 		$table_name = $wpdb->base_prefix . JS_PACKAGE_MANAGER_TABLE;
 		$this->src         = $src;
-		$file_content      = file_get_contents( $src );
+		if ( filter_var( $src, FILTER_VALIDATE_URL ) ) {
+			$response     = wp_remote_get( $src );
+			$file_content = $response['body'];
+		} else {
+			$file_content = file_get_contents( $src );
+		}
 		$this->fingerprint = md5( $file_content );
 		$this->length      = strlen( $file_content );
 		$this->start       = substr( $file_content, 0, 10 );
