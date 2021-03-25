@@ -91,7 +91,7 @@ class Js_Package_Manager_Admin {
                 ),
             ),
             array(
-                'id'    => 'moment-with-locales',
+                'id'    => 'moment-with-locales-min',
                 'name'  => 'Moment.js with Locales',
                 'versions' => array(
                     '2.10.6' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment-with-locales.min.js',
@@ -100,6 +100,16 @@ class Js_Package_Manager_Admin {
                     '2.29.1' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.min.js',
                 ),
             ),
+			array(
+				'id'    => 'moment-with-locales',
+				'name'  => 'Moment.js with Locales',
+				'versions' => array(
+					'2.10.6' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment-with-locales.js',
+					'2.11.0' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.0/moment-with-locales.js',
+					'2.29.0' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.0/moment-with-locales.js',
+					'2.29.1' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.js',
+				),
+			),
             array(
                 'id'    => 'underscore-min',
                 'name'  => 'Underscore.js',
@@ -195,7 +205,7 @@ class Js_Package_Manager_Admin {
 		/** @var _WP_Dependency $registered_script */
 		foreach ( $wp_scripts->registered as $registered_script ) {
 			if ( ! property_exists( $registered_script, 'src' ) || empty( $registered_script->src ) ) {
-				continue 1;
+				continue;
 			}
 			$script_file = $registered_script->src;
 			if ( filter_var( $script_file, FILTER_VALIDATE_URL ) ) {

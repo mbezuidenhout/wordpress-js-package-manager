@@ -144,7 +144,7 @@ class Js_Package_Version {
 	 * @return int|bool
 	 */
 	public function pos( $string ) {
-		if ( strlen( $string ) > $this->length ) {
+		if ( strlen( $string ) >= $this->length ) {
 			$start = strpos ( $string, $this->start );
 			if( $start !== false ) {
 				$string = substr( $string, $start, $this->length );
