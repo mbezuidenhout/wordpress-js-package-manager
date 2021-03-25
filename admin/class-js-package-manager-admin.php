@@ -82,7 +82,7 @@ class Js_Package_Manager_Admin {
                 ),
             ),
             array(
-                'id'    => 'flickity',
+                'id'    => 'flickity-min',
                 'name'  => 'Flickity.io',
                 'versions' => array(
                     '1.1.0' => 'https://cdnjs.cloudflare.com/ajax/libs/flickity/1.1.0/flickity.pkgd.min.js',
@@ -92,7 +92,7 @@ class Js_Package_Manager_Admin {
             ),
             array(
                 'id'    => 'moment-with-locales',
-                'name'  => 'Moment',
+                'name'  => 'Moment.js with Locales',
                 'versions' => array(
                     '2.10.6' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment-with-locales.min.js',
                     '2.11.0' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.0/moment-with-locales.min.js',
@@ -100,7 +100,25 @@ class Js_Package_Manager_Admin {
                     '2.29.1' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.min.js',
                 ),
             ),
-        );
+            array(
+                'id'    => 'underscore-min',
+                'name'  => 'Underscore.js',
+                'versions' => array(
+                    '1.8.3'  => 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js',
+                    '1.9.0'  => 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.0/underscore-min.js',
+                    '1.12.0' => 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.12.0/underscore-min.js',
+                )
+            ),
+			array(
+				'id'    => 'underscore',
+				'name'  => 'Underscore.js',
+				'versions' => array(
+					'1.8.3'  => 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore.js',
+					'1.9.0'  => 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.0/underscore.js',
+					'1.12.0' => 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.12.0/underscore.js',
+				)
+			),
+		);
 		foreach( $loadable_packages as $package ) {
 		    $pkg = new Js_Package( $package['id'], $package['name'] );
 		    foreach( $package['versions'] as $ver => $src ) {
@@ -195,6 +213,29 @@ class Js_Package_Manager_Admin {
 					$parts[] = array('start' => $found_package->get_pos(), 'id' => $found_package->package->get_id(), 'ver' => $found_package->package_version->get_ver() );
 				}
 				$scripts[$registered_script->handle] = array( 'ver' => $registered_script->ver, 'src' => $script_file , 'parts' => $parts );
+			} else {
+				// See if there is a non-minified file and try again.
+				if ( file_exists( str_replace( ".min", "", $script_file ) ) ) {
+					// Match against non-minified versions.
+					$script_file = str_replace( ".min", "", $script_file );
+				}
+				$found_packages = $this->find_packages( $script_file );
+				if ( ! empty( $found_packages ) ) {
+					$parts = [];
+					foreach ( $found_packages as $found_package ) {
+						$packages[ $found_package->package->get_name() ] = $found_package->package_version;
+						$parts[]                                         = array(
+							'start' => $found_package->get_pos(),
+							'id'    => $found_package->package->get_id(),
+							'ver'   => $found_package->package_version->get_ver()
+						);
+					}
+					$scripts[ $registered_script->handle ] = array(
+						'ver' => $registered_script->ver,
+						'src' => $script_file,
+						'parts' => $parts
+					);
+				}
 			}
 		}
 

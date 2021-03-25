@@ -112,11 +112,6 @@ class Js_Package_Manager_Public {
 			if( $managed_script instanceof Script_Manager ) {
 				$registered_script->src = $managed_script->get_path();
 			}
-//			if ($registered_script->handle == 'jquery-core'
-//			    && $registered_script->src == '/wp-includes/js/jquery/jquery.min.js'
-//			    && $registered_script->ver == '3.5.1' ) {
-//				$registered_script->src = JS_PACKAGE_MANAGER_TEMPLATE_PATH . '/js/jquery/jquery.min.js';
-//			}
 		}
 	}
 
