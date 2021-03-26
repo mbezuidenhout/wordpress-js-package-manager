@@ -94,6 +94,7 @@ class Js_Package_Manager_Admin {
                 'id'    => 'moment-with-locales-min',
                 'name'  => 'Moment.js with Locales',
                 'versions' => array(
+                    '2.10.6.0' => ABSPATH . '/wp-content/plugins/js-package-manager/public/js/cache/a023e9fa605f2ab279993060e1c57feb',
                     '2.10.6' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment-with-locales.min.js',
                     '2.11.0' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.0/moment-with-locales.min.js',
                     '2.29.0' => 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.0/moment-with-locales.min.js',
